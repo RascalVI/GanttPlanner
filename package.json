@@ -2,7 +2,7 @@
   "name": "portable-gantt",
   "version": "1.0.0",
   "description": "Переносимый планировщик Ганта",
-  "main": "dist-electron/main.js",
+  "main": "dist-electron/electron/main.js",
   "directories": {
     "doc": "docs"
   },
