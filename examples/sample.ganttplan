@@ -11,7 +11,13 @@
       "rangeStart": "2026-09-21", "rangeEnd": "2026-10-04", "createdAt": "2026-09-21T10:00:00Z",
       "tasks": [
         { "id": "sample-task-1", "title": "Дизайн страницы", "shortLabel": "Дизайн", "employeeId": "sample-3", "startDay": "2026-09-21", "endDay": "2026-09-23", "status": "done", "linkedTaskId": null, "routine": false, "order": 0 },
-        { "id": "sample-task-2", "title": "Верстка страницы", "shortLabel": "Верстка", "employeeId": "sample-1", "startDay": "2026-09-24", "endDay": "2026-09-29", "status": "active", "linkedTaskId": "sample-task-1", "routine": false, "order": 0 }
+        { "id": "sample-task-2", "title": "Верстка страницы", "shortLabel": "Верстка", "employeeId": "sample-1", "startDay": "2026-09-24", "endDay": "2026-09-29", "status": "active", "linkedTaskId": "sample-task-1", "routine": false, "order": 0 },
+        { "id": "sample-r1-1", "title": "Текучка", "shortLabel": "Тек", "employeeId": "sample-1", "startDay": "2026-09-21", "endDay": "2026-09-21", "status": "waiting", "linkedTaskId": null, "routine": true, "order": 1 },
+        { "id": "sample-r1-2", "title": "Текучка", "shortLabel": "Тек", "employeeId": "sample-1", "startDay": "2026-09-28", "endDay": "2026-09-28", "status": "waiting", "linkedTaskId": null, "routine": true, "order": 2 },
+        { "id": "sample-r2-1", "title": "Текучка", "shortLabel": "Тек", "employeeId": "sample-2", "startDay": "2026-09-22", "endDay": "2026-09-22", "status": "waiting", "linkedTaskId": null, "routine": true, "order": 0 },
+        { "id": "sample-r2-2", "title": "Текучка", "shortLabel": "Тек", "employeeId": "sample-2", "startDay": "2026-09-29", "endDay": "2026-09-29", "status": "waiting", "linkedTaskId": null, "routine": true, "order": 1 },
+        { "id": "sample-r3-1", "title": "Текучка", "shortLabel": "Тек", "employeeId": "sample-3", "startDay": "2026-09-23", "endDay": "2026-09-23", "status": "waiting", "linkedTaskId": null, "routine": true, "order": 1 },
+        { "id": "sample-r3-2", "title": "Текучка", "shortLabel": "Тек", "employeeId": "sample-3", "startDay": "2026-09-30", "endDay": "2026-09-30", "status": "waiting", "linkedTaskId": null, "routine": true, "order": 2 }
       ]
     }
   ],

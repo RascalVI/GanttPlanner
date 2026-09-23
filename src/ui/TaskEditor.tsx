@@ -8,17 +8,18 @@ interface Props {
   tasks: Task[];
   defaultDay: string;
   initialBacklog?: boolean;
+  initialRoutine?: boolean;
   onClose(): void;
   onSave(task: Task): void;
   onDelete?(taskId: string): void;
   onReorder?(taskId: string, direction: -1 | 1): void;
 }
 
-export function TaskEditor({ task, employeeId, employees, tasks, defaultDay, initialBacklog = false, onClose, onSave, onDelete, onReorder }: Props) {
+export function TaskEditor({ task, employeeId, employees, tasks, defaultDay, initialBacklog = false, initialRoutine = false, onClose, onSave, onDelete, onReorder }: Props) {
   const [draft, setDraft] = useState<Task>(() => task ?? {
-    id: crypto.randomUUID(), title: '', shortLabel: '', employeeId: employeeId ?? employees[0]?.id ?? '',
+    id: crypto.randomUUID(), title: initialRoutine ? 'Текучка' : '', shortLabel: initialRoutine ? 'Тек' : '', employeeId: employeeId ?? employees[0]?.id ?? '',
     startDay: initialBacklog ? null : defaultDay, endDay: initialBacklog ? null : defaultDay, status: 'waiting', linkedTaskId: null,
-    routine: false, order: Math.max(-1, ...tasks.filter(item => item.employeeId === employeeId).map(item => item.order)) + 1,
+    routine: initialRoutine, order: Math.max(-1, ...tasks.filter(item => item.employeeId === employeeId).map(item => item.order)) + 1,
   });
   const [error, setError] = useState('');
   const backlog = draft.startDay === null;

@@ -30,7 +30,7 @@ export async function writePptx(scenes: ExportScene[], file: string): Promise<vo
         });
       } else {
         slide.addText(item.text, {
-          x, y, w, h, margin: 0, fontFace: 'Helvetica', fontSize: item.fontSize * .75,
+          x, y, w, h, margin: 0, fontFace: 'Century Gothic', fontSize: item.fontSize * .75,
           bold: item.bold ?? false, color: item.color, align: item.align ?? 'left',
           breakLine: false, valign: 'middle',
         });

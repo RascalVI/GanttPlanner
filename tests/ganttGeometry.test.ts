@@ -31,6 +31,15 @@ describe('Gantt geometry', () => {
     expect(rows.map(row => row.key)).toEqual(['employee:e1', 'task:t1', 'task:t2']);
   });
 
+  it('shows weekly routine reservations on one row per employee', () => {
+    const first = { ...task, id: 'r1', title: 'Текучка', routine: true, startDay: '2026-09-14', endDay: '2026-09-14' };
+    const second = { ...first, id: 'r2', startDay: '2026-09-21', endDay: '2026-09-21', order: 2 };
+    const rows = buildVisibleRows({ ...plan, tasks: [task, first, second] }, [employee]);
+    expect(rows.map(row => row.key)).toEqual(['employee:e1', 'task:t1', 'routine:e1']);
+    const routine = rows.find(row => row.kind === 'routine');
+    expect(routine?.kind === 'routine' && routine.tasks.map(item => item.id)).toEqual(['r1', 'r2']);
+  });
+
   it('fits a typical plan without making rows unreadable', () => {
     expect(rowHeight(820, 27)).toBeGreaterThanOrEqual(26);
     expect(rowHeight(820, 27) * 27 + 76).toBeLessThanOrEqual(820);

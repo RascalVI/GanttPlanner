@@ -18,7 +18,7 @@ describe('PowerPoint export', () => {
       const slide = await zip.file('ppt/slides/slide1.xml')?.async('string');
       expect(slide).toContain('<p:sp>');
       expect(slide).toContain('Нематериальная мотивация');
-      expect(slide).toContain('typeface="Helvetica"');
+      expect(slide).toContain('typeface="Century Gothic"');
       expect(slide).not.toContain('<p:pic>');
     } finally {
       await rm(folder, { recursive: true, force: true });

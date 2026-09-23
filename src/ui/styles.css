@@ -1,4 +1,4 @@
-:root { font-family: Helvetica, Arial, sans-serif; color: #172c28; background: #edf2ef; font-synthesis: none; }
+:root { font-family: 'Century Gothic', Arial, sans-serif; color: #172c28; background: #edf2ef; font-synthesis: none; }
 * { box-sizing: border-box; }
 body { margin: 0; }
 button, input, select { font: inherit; }
@@ -58,6 +58,7 @@ button { cursor: pointer; }
 .is-employee .gantt-row-label { background: #f2f6f2; }.employee-dot { width: 7px; height: 7px; margin-right: 10px; background: #3f8365; border-radius: 50%; }
 .gantt-row-label strong { font-size: 12px; letter-spacing: .015em; font-weight: 750; }.gantt-row-label small { margin-left: auto; color: #7d9485; font-size: 10px; font-weight: 650; text-transform: uppercase; letter-spacing: .09em; }
 .task-indent { width: 17px; flex: none; }.gantt-row-label button { min-width: 0; padding: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: left; border: 0; background: transparent; color: #405a50; font-size: 12px; }.gantt-row-label button:hover { color: #126547; text-decoration: underline; }
+.routine-label { color: #866941; font-size: 12px; font-weight: 700; }.routine-row .employee-add { margin-left: auto; }
 .link-mark { margin-left: 6px; color: #7e9d90; }.gantt-row-days { display: flex; position: relative; flex: none; }.gantt-row-days > span { flex: none; height: 100%; border-right: 1px solid #edf1ed; }.gantt-row-days > span.weekend { background: #f7f9f7; }.gantt-row-days > span.today { background: #fff9ed; }.is-employee .gantt-row-days > span { background: #f2f6f2; border-right-color: #e6eee7; }
 .task-bar { position: absolute; top: 4px; bottom: 4px; display: flex; align-items: center; min-width: 12px; padding: 0 7px; overflow: hidden; border: 0; border-radius: 5px; color: white; text-align: left; box-shadow: 0 2px 5px #1b3d3a1c; }.task-bar span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 10px; font-weight: 700; }
 .task-bar.status-waiting { background: #9aaba5; }.task-bar.status-active { background: #3979a9; }.task-bar.status-done { background: #50a075; }.task-bar.is-routine { background: #a98959; }.task-bar:hover { filter: brightness(.91); z-index: 2; }

@@ -25,13 +25,15 @@ export function App() {
   const [editedTask, setEditedTask] = useState<Task | undefined>();
   const [newTaskEmployee, setNewTaskEmployee] = useState<string>();
   const [newBacklog, setNewBacklog] = useState(false);
+  const [newRoutine, setNewRoutine] = useState(false);
   const [notice, setNotice] = useState('');
 
-  function showTask(task?: Task, employeeId?: string, backlog = false) {
+  function showTask(task?: Task, employeeId?: string, backlog = false, routine = false) {
     setPanel(null);
     setEditedTask(task);
     setNewTaskEmployee(employeeId);
     setNewBacklog(backlog);
+    setNewRoutine(routine);
     setEditorOpen(true);
   }
 
@@ -86,6 +88,7 @@ export function App() {
           </div>
           <GanttGrid plan={plan} employees={project.employees} onOpenTask={task => showTask(task)}
             onAddTask={employeeId => showTask(undefined, employeeId)}
+            onAddRoutine={employeeId => showTask(undefined, employeeId, false, true)}
             onMoveTask={(task, deltaDays) => tryAct({ type: 'moveTask', planId: plan.id, taskId: task.id, deltaDays })}
             onResizeTask={(task, edge, deltaDays) => tryAct({ type: 'resizeTask', planId: plan.id, taskId: task.id, edge, deltaDays })} />
         </>
@@ -101,8 +104,8 @@ export function App() {
 
       {copyOpen && plan && <PlanCopyDialog source={plan} onClose={() => setCopyOpen(false)} onCreate={(reportDay, rangeStart, rangeEnd) => { act({ type: 'copyPlan', sourceId: plan.id, reportDay, rangeStart, rangeEnd }); setCopyOpen(false); }} />}
       {exportOpen && project && plan && <ExportDialog plan={plan} employees={project.employees} onClose={() => setExportOpen(false)} onExport={exportScenes} />}
-      {editorOpen && project && plan && <TaskEditor key={editedTask?.id ?? `new-${newTaskEmployee}-${newBacklog}`} task={editedTask} employeeId={newTaskEmployee}
-        employees={project.employees} tasks={plan.tasks} defaultDay={plan.rangeStart} initialBacklog={newBacklog}
+      {editorOpen && project && plan && <TaskEditor key={editedTask?.id ?? `new-${newTaskEmployee}-${newBacklog}-${newRoutine}`} task={editedTask} employeeId={newTaskEmployee}
+        employees={project.employees} tasks={plan.tasks} defaultDay={plan.rangeStart} initialBacklog={newBacklog} initialRoutine={newRoutine}
         onClose={() => setEditorOpen(false)} onSave={task => { act({ type: 'saveTask', planId: plan.id, task }); setEditorOpen(false); }}
         onDelete={taskId => { act({ type: 'deleteTask', planId: plan.id, taskId }); setEditorOpen(false); }}
         onReorder={(taskId, direction) => tryAct({ type: 'reorderTask', planId: plan.id, taskId, direction })} />}

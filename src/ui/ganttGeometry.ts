@@ -3,15 +3,19 @@ import type { Day, Employee, Plan, Task } from '../domain/types';
 
 export type VisibleRow =
   | { key: string; kind: 'employee'; employee: Employee }
-  | { key: string; kind: 'task'; employee: Employee; task: Task };
+  | { key: string; kind: 'task'; employee: Employee; task: Task }
+  | { key: string; kind: 'routine'; employee: Employee; tasks: Task[] };
 
 export function buildVisibleRows(plan: Plan, employees: Employee[]): VisibleRow[] {
   return [...employees].sort((a, b) => a.order - b.order).flatMap(employee => {
     const tasks = plan.tasks.filter(task => task.employeeId === employee.id && task.startDay && task.endDay)
       .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title, 'ru'));
+    const routine = tasks.filter(task => task.routine).sort((a, b) =>
+      a.startDay!.localeCompare(b.startDay!) || a.order - b.order);
     return [
       { key: `employee:${employee.id}`, kind: 'employee' as const, employee },
-      ...tasks.map(task => ({ key: `task:${task.id}`, kind: 'task' as const, employee, task })),
+      ...tasks.filter(task => !task.routine).map(task => ({ key: `task:${task.id}`, kind: 'task' as const, employee, task })),
+      ...(routine.length ? [{ key: `routine:${employee.id}`, kind: 'routine' as const, employee, tasks: routine }] : []),
     ];
   });
 }

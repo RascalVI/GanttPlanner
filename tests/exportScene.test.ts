@@ -37,4 +37,16 @@ describe('shared export layout', () => {
     expect(bar?.x).toBeGreaterThan(scene.timelineLeft);
     expect(bar?.w).toBeCloseTo(scene.dayWidth - 6, 1);
   });
+
+  it('exports routine for separate weeks as bars on one line', () => {
+    const first = { ...base.tasks[0], id: 'r1', title: 'Текучка', routine: true,
+      startDay: '2026-09-14', endDay: '2026-09-14' };
+    const second = { ...first, id: 'r2', startDay: '2026-09-21', endDay: '2026-09-21' };
+    const scene = buildExportScenes({ ...base, tasks: [first, second] }, demoProject.employees, range)[0];
+    const bars = scene.items.filter(item => item.role === 'task-bar');
+    expect(bars).toHaveLength(2);
+    expect(bars[0].y).toBe(bars[1].y);
+    expect(bars[0].x).toBeLessThan(bars[1].x);
+    expect(scene.items.filter(item => item.role === 'task-title')).toHaveLength(1);
+  });
 });

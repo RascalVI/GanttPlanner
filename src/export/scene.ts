@@ -15,7 +15,8 @@ export interface ExportScene {
   dayWidth: number;
 }
 
-type Row = { kind: 'employee'; employee: Employee } | { kind: 'task'; employee: Employee; task: Task };
+type Row = { kind: 'employee'; employee: Employee } | { kind: 'task'; employee: Employee; task: Task } |
+  { kind: 'routine'; employee: Employee; tasks: Task[] };
 const WIDTH = 1920;
 const HEIGHT = 1080;
 const LEFT = 520;
@@ -44,9 +45,12 @@ function rowsFor(plan: Plan, employees: Employee[], start: Day, end: Day): Row[]
   return [...employees].sort((a, b) => a.order - b.order).flatMap(employee => {
     const tasks = plan.tasks.filter(task => task.employeeId === employee.id && task.startDay && task.endDay &&
       task.endDay >= start && task.startDay <= end).sort((a, b) => a.order - b.order);
+    const routine = tasks.filter(task => task.routine).sort((a, b) =>
+      a.startDay!.localeCompare(b.startDay!) || a.order - b.order);
     return [
       { kind: 'employee' as const, employee },
-      ...tasks.map(task => ({ kind: 'task' as const, employee, task })),
+      ...tasks.filter(task => !task.routine).map(task => ({ kind: 'task' as const, employee, task })),
+      ...(routine.length ? [{ kind: 'routine' as const, employee, tasks: routine }] : []),
     ];
   });
 }
@@ -59,7 +63,7 @@ function pagesForRows(rows: Row[]): Row[][] {
       pages.push(current);
       current = [];
     }
-    if (current.length === 0 && row.kind === 'task') current.push({ kind: 'employee', employee: row.employee });
+    if (current.length === 0 && row.kind !== 'employee') current.push({ kind: 'employee', employee: row.employee });
     current.push(row);
   }
   if (current.length) pages.push(current);
@@ -102,22 +106,28 @@ function drawPage(plan: Plan, rows: Row[], start: Day, end: Day, page: number, t
   items.push({ type: 'line', x: RIGHT, y: 207, w: 0, h: rows.length * ROW_HEIGHT + 4, color: colors.grid, lineWidth: 1 });
   items.push({ type: 'line', x: 68, y: 210, w: 1802, h: 0, color: 'CADBCD', lineWidth: 1 });
 
+  function drawTask(task: Task, y: number) {
+    taskIds.push(task.id);
+    const visibleStart = task.startDay! < start ? start : task.startDay!;
+    const visibleEnd = task.endDay! > end ? end : task.endDay!;
+    const x = LEFT + daysBetween(start, visibleStart) * dayWidth + 3;
+    const width = daysInclusive(visibleStart, visibleEnd) * dayWidth - 6;
+    rect(items, x, y + 5, width, 19, statusColor(task), 'task-bar', task.id, 4);
+    if (width >= 45) tx(items, task.shortLabel || task.title, x + 7, y + 7, width - 14, 15, 12, colors.white, true, 'left', 'bar-label', task.id);
+  }
+
   rows.forEach((row, index) => {
     const y = CONTENT_TOP + index * ROW_HEIGHT;
     if (row.kind === 'employee') {
       rect(items, 68, y, 1802, ROW_HEIGHT, colors.pale);
       tx(items, row.employee.name, 80, y + 4, 330, 22, 17, colors.ink, true);
       tx(items, row.employee.role.toUpperCase(), 370, y + 5, 120, 20, 12, colors.muted, true, 'right');
+    } else if (row.kind === 'task') {
+      tx(items, row.task.title, 98, y + 5, 398, 21, 16, colors.ink, false, 'left', 'task-title', row.task.id);
+      drawTask(row.task, y);
     } else {
-      const task = row.task;
-      taskIds.push(task.id);
-      tx(items, task.title, 98, y + 5, 398, 21, 16, colors.ink, false, 'left', 'task-title', task.id);
-      const visibleStart = task.startDay! < start ? start : task.startDay!;
-      const visibleEnd = task.endDay! > end ? end : task.endDay!;
-      const x = LEFT + daysBetween(start, visibleStart) * dayWidth + 3;
-      const width = daysInclusive(visibleStart, visibleEnd) * dayWidth - 6;
-      rect(items, x, y + 5, width, 19, statusColor(task), 'task-bar', task.id, 4);
-      if (width >= 45) tx(items, task.shortLabel || task.title, x + 7, y + 7, width - 14, 15, 12, colors.white, true, 'left', 'bar-label', task.id);
+      tx(items, 'Текучка', 98, y + 5, 398, 21, 16, '866941', true, 'left', 'task-title');
+      row.tasks.forEach(task => drawTask(task, y));
     }
     items.push({ type: 'line', x: 68, y: y + ROW_HEIGHT, w: 1802, h: 0, color: colors.grid, lineWidth: .6 });
   });

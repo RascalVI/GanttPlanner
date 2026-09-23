@@ -8,6 +8,7 @@ export interface GanttGridProps {
   employees: Employee[];
   onOpenTask(task: Task): void;
   onAddTask?(employeeId: string): void;
+  onAddRoutine?(employeeId: string): void;
   onMoveTask?(task: Task, deltaDays: number): void;
   onResizeTask?(task: Task, edge: 'start' | 'end', deltaDays: number): void;
 }
@@ -19,7 +20,7 @@ function dateLabel(day: string): string {
   return weekday.format(parseDay(day)).replace('.', '');
 }
 
-export function GanttGrid({ plan, employees, onOpenTask, onAddTask, onMoveTask, onResizeTask }: GanttGridProps) {
+export function GanttGrid({ plan, employees, onOpenTask, onAddTask, onAddRoutine, onMoveTask, onResizeTask }: GanttGridProps) {
   const days = useMemo(() => enumerateDays(plan.rangeStart, plan.rangeEnd), [plan.rangeStart, plan.rangeEnd]);
   const rows = useMemo(() => buildVisibleRows(plan, employees), [plan, employees]);
   const container = useRef<HTMLDivElement>(null);
@@ -64,12 +65,27 @@ export function GanttGrid({ plan, employees, onOpenTask, onAddTask, onMoveTask, 
   }, []);
   const today = localToday();
 
+  function bar(task: Task) {
+    const geometry = getBarGeometry(task, plan.rangeStart, plan.rangeEnd, dayWidth);
+    if (!geometry) return null;
+    return <button key={task.id} className={`task-bar status-${task.status} ${task.routine ? 'is-routine' : ''}`}
+      style={{ left: geometry.left + 3, width: Math.max(geometry.width - 6, 12) }}
+      title={`${task.title} · ${task.startDay}—${task.endDay}`}
+      onPointerDown={event => { dragRef.current = { task, x: event.clientX, mode: (event.target as HTMLElement).dataset.edge as 'start' | 'end' || 'move' }; event.currentTarget.setPointerCapture(event.pointerId); }}
+      onPointerUp={endDrag}
+      onClick={() => { if (skipClick.current) { skipClick.current = false; return; } onOpenTask(task); }}>
+      <span className="resize-handle start" data-edge="start" />
+      <span>{task.shortLabel || task.title}</span>
+      <span className="resize-handle end" data-edge="end" />
+    </button>;
+  }
+
   return (
     <div className="gantt-shell" ref={container}>
       <div className="gantt-scroll" aria-label="График задач">
         <div className="gantt-content" style={{ width: tableWidth, ['--label-width' as string]: `${labelWidth}px`, ['--day-width' as string]: `${dayWidth}px` }}>
           <div className="gantt-week-row">
-            <div className="gantt-corner">КОМАНДА И ЗАДАЧИ <span>{rows.filter(row => row.kind === 'task').length}</span></div>
+            <div className="gantt-corner">КОМАНДА И ЗАДАЧИ <span>{plan.tasks.filter(task => task.startDay && task.endDay).length}</span></div>
             {weeks.map(week => (
               <div key={week.monday} className="gantt-week" style={{ width: week.count * dayWidth }}>
                 {Number(week.first.slice(-2))}–{Number(week.last.slice(-2))} {month.format(parseDay(week.last))}
@@ -86,30 +102,21 @@ export function GanttGrid({ plan, employees, onOpenTask, onAddTask, onMoveTask, 
           </div>
           {rows.map(row => {
             const employeeRow = row.kind === 'employee';
-            const geometry = employeeRow ? null : getBarGeometry(row.task, plan.rangeStart, plan.rangeEnd, dayWidth);
             return (
-              <div key={row.key} className={`gantt-row ${employeeRow ? 'is-employee' : 'is-task'}`} style={{ height: lineHeight }}>
+              <div key={row.key} className={`gantt-row ${employeeRow ? 'is-employee' : row.kind === 'routine' ? 'is-task routine-row' : 'is-task'}`} style={{ height: lineHeight }}>
                 <div className="gantt-row-label" style={{ width: labelWidth }}>
                   {employeeRow ? (
                     <><span className="employee-dot" /><strong>{row.employee.name}</strong><small>{row.employee.role}</small><button className="employee-add" title={`Добавить задачу: ${row.employee.name}`} onClick={() => onAddTask?.(row.employee.id)}>+</button></>
+                  ) : row.kind === 'routine' ? (
+                    <><span className="task-indent" /><span className="routine-label">Текучка</span><button className="employee-add" title={`Добавить текучку: ${row.employee.name}`} aria-label={`Добавить текучку: ${row.employee.name}`} onClick={() => onAddRoutine?.(row.employee.id)}>+</button></>
                   ) : (
                     <><span className="task-indent" /><button title={row.task.title} onClick={() => onOpenTask(row.task)}>{row.task.title}</button>{row.task.linkedTaskId && <span className="link-mark" title="Связанная задача">↗</span>}</>
                   )}
                 </div>
                 <div className="gantt-row-days" style={{ width: days.length * dayWidth }}>
                   {days.map(day => <span key={day} className={`${[0, 6].includes(parseDay(day).getUTCDay()) ? 'weekend' : ''} ${day === today ? 'today' : ''}`} style={{ width: dayWidth }} />)}
-                  {!employeeRow && geometry && (
-                    <button className={`task-bar status-${row.task.status} ${row.task.routine ? 'is-routine' : ''}`}
-                      style={{ left: geometry.left + 3, width: Math.max(geometry.width - 6, 12) }}
-                      title={`${row.task.title} · ${row.task.startDay}—${row.task.endDay}`}
-                      onPointerDown={event => { dragRef.current = { task: row.task, x: event.clientX, mode: (event.target as HTMLElement).dataset.edge as 'start' | 'end' || 'move' }; event.currentTarget.setPointerCapture(event.pointerId); }}
-                      onPointerUp={endDrag}
-                      onClick={() => { if (skipClick.current) { skipClick.current = false; return; } onOpenTask(row.task); }}>
-                      <span className="resize-handle start" data-edge="start" />
-                      <span>{row.task.shortLabel || row.task.title}</span>
-                      <span className="resize-handle end" data-edge="end" />
-                    </button>
-                  )}
+                  {row.kind === 'task' && bar(row.task)}
+                  {row.kind === 'routine' && row.tasks.map(bar)}
                 </div>
               </div>
             );
