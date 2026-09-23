@@ -1,4 +1,4 @@
-:root { font-family: 'Bahnschrift', 'Segoe UI', sans-serif; color: #172c28; background: #edf2ef; font-synthesis: none; }
+:root { font-family: Helvetica, Arial, sans-serif; color: #172c28; background: #edf2ef; font-synthesis: none; }
 * { box-sizing: border-box; }
 body { margin: 0; }
 button, input, select { font: inherit; }

@@ -25,7 +25,7 @@ export async function drawScene(canvas: HTMLCanvasElement, scene: ExportScene): 
       context.stroke();
     } else {
       context.fillStyle = `#${item.color}`;
-      context.font = `${item.bold ? '700' : '400'} ${item.fontSize}px Arial`;
+      context.font = `${item.bold ? '700' : '400'} ${item.fontSize}px Helvetica, Arial, sans-serif`;
       context.textAlign = item.align ?? 'left';
       const x = item.align === 'center' ? item.x + item.w / 2 : item.align === 'right' ? item.x + item.w : item.x;
       let shown = item.text;
