@@ -1,0 +1,36 @@
+{
+  "name": "portable-gantt",
+  "version": "1.0.0",
+  "description": "Переносимый планировщик Ганта",
+  "main": "dist-electron/main.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit",
+    "build": "vite build && tsc -p tsconfig.electron.json",
+    "dev:electron": "concurrently -k \"vite --host 127.0.0.1\" \"node scripts/wait-vite.cjs && tsc -p tsconfig.electron.json && electron .\"",
+    "package:win": "node scripts/package-win.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "electron": "^44.4.5",
+    "pptxgenjs": "^4.0.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.3.0",
+    "@types/node": "^26.6.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "concurrently": "^10.0.5",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1"
+  }
+}
