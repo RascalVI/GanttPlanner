@@ -43,10 +43,28 @@ export function resizeTask(task: Task, edge: 'start' | 'end', deltaDays: number)
   return changed;
 }
 
-function weeksInRange(start: Day, end: Day): Day[] {
+export function weeksInRange(start: Day, end: Day): Day[] {
   daysInclusive(start, end);
   const result: Day[] = [];
   for (let week = mondayOf(start); week <= end; week = addDays(week, 7)) result.push(week);
+  return result;
+}
+
+export function addRoutineTasks(tasks: Task[], weeks: Day[], employees: Employee[], rangeStart: Day): Task[] {
+  const result = [...tasks];
+  for (const week of weeks) {
+    for (const employee of employees) {
+      const exists = result.some(item => item.routine && item.employeeId === employee.id &&
+        item.startDay && mondayOf(item.startDay) === week);
+      if (exists) continue;
+      const day = week < rangeStart ? rangeStart : week;
+      result.push({
+        id: crypto.randomUUID(), title: 'Текучка', shortLabel: 'Тек', employeeId: employee.id,
+        startDay: day, endDay: day, status: 'waiting', linkedTaskId: null,
+        routine: true, order: Math.max(-1, ...result.filter(item => item.employeeId === employee.id).map(item => item.order)) + 1,
+      });
+    }
+  }
   return result;
 }
 
@@ -62,24 +80,12 @@ export function copyPlan(
   const sourceTasks = source.tasks.filter(item => !item.routine ||
     (item.startDay && weeks.includes(mondayOf(item.startDay))));
   const idMap = new Map(sourceTasks.map(item => [item.id, crypto.randomUUID()]));
-  const tasks: Task[] = sourceTasks.map(item => ({
+  const copiedTasks: Task[] = sourceTasks.map(item => ({
     ...structuredClone(item),
     id: idMap.get(item.id)!,
     linkedTaskId: item.linkedTaskId ? idMap.get(item.linkedTaskId) ?? null : null,
   }));
-  for (const week of weeks) {
-    for (const employee of employees) {
-      const exists = tasks.some(item => item.routine && item.employeeId === employee.id &&
-        item.startDay && mondayOf(item.startDay) === week);
-      if (exists) continue;
-      const day = week < rangeStart ? rangeStart : week;
-      tasks.push({
-        id: crypto.randomUUID(), title: 'Текучка', shortLabel: 'Тек', employeeId: employee.id,
-        startDay: day, endDay: day, status: 'waiting', linkedTaskId: null,
-        routine: true, order: Math.max(-1, ...tasks.filter(item => item.employeeId === employee.id).map(item => item.order)) + 1,
-      });
-    }
-  }
+  const tasks = addRoutineTasks(copiedTasks, weeks, employees, rangeStart);
   return {
     id: crypto.randomUUID(),
     title: `План на ${reportDay.split('-').reverse().join('.')}`,

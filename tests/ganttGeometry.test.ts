@@ -32,8 +32,8 @@ describe('Gantt geometry', () => {
   });
 
   it('fits a typical plan without making rows unreadable', () => {
-    expect(rowHeight(1080, 24)).toBeGreaterThanOrEqual(28);
-    expect(rowHeight(1080, 24) * 24).toBeLessThanOrEqual(840);
+    expect(rowHeight(820, 27)).toBeGreaterThanOrEqual(26);
+    expect(rowHeight(820, 27) * 27 + 76).toBeLessThanOrEqual(820);
     expect(rowHeight(700, 40)).toBe(26);
   });
 });

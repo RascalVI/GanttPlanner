@@ -30,7 +30,7 @@ export function getBarGeometry(
   };
 }
 
-export function rowHeight(viewportHeight: number, rowCount: number): number {
+export function rowHeight(gridHeight: number, rowCount: number): number {
   if (rowCount === 0) return 46;
-  return Math.max(26, Math.min(46, Math.floor((viewportHeight - 300) / rowCount)));
+  return Math.max(26, Math.min(46, Math.floor((gridHeight - 84) / rowCount)));
 }

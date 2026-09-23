@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "employees": [
+    { "id": "sample-1", "name": "Сотрудник 1", "role": "Верстка", "order": 0 },
+    { "id": "sample-2", "name": "Сотрудник 2", "role": "Верстка", "order": 1 },
+    { "id": "sample-3", "name": "Сотрудник 3", "role": "Дизайн", "order": 2 }
+  ],
+  "plans": [
+    {
+      "id": "sample-plan", "title": "Пример недельного плана", "reportDay": "2026-09-21",
+      "rangeStart": "2026-09-21", "rangeEnd": "2026-10-04", "createdAt": "2026-09-21T10:00:00Z",
+      "tasks": [
+        { "id": "sample-task-1", "title": "Дизайн страницы", "shortLabel": "Дизайн", "employeeId": "sample-3", "startDay": "2026-09-21", "endDay": "2026-09-23", "status": "done", "linkedTaskId": null, "routine": false, "order": 0 },
+        { "id": "sample-task-2", "title": "Верстка страницы", "shortLabel": "Верстка", "employeeId": "sample-1", "startDay": "2026-09-24", "endDay": "2026-09-29", "status": "active", "linkedTaskId": "sample-task-1", "routine": false, "order": 0 }
+      ]
+    }
+  ],
+  "revisions": []
+}

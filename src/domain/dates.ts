@@ -14,6 +14,11 @@ export function formatDay(date: Date): Day {
   return date.toISOString().slice(0, 10);
 }
 
+export function localToday(): Day {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
 export function addDays(day: Day, amount: number): Day {
   if (!Number.isInteger(amount)) throw new Error('Сдвиг должен быть целым числом дней');
   return formatDay(new Date(parseDay(day).getTime() + amount * DAY_MS));

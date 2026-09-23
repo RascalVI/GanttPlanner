@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { enumerateDays, mondayOf, parseDay } from '../domain/dates';
+import { enumerateDays, localToday, mondayOf, parseDay } from '../domain/dates';
 import type { Employee, Plan, Task } from '../domain/types';
 import { buildVisibleRows, getBarGeometry, rowHeight } from './ganttGeometry';
 
@@ -7,6 +7,7 @@ export interface GanttGridProps {
   plan: Plan;
   employees: Employee[];
   onOpenTask(task: Task): void;
+  onAddTask?(employeeId: string): void;
   onMoveTask?(task: Task, deltaDays: number): void;
   onResizeTask?(task: Task, edge: 'start' | 'end', deltaDays: number): void;
 }
@@ -18,17 +19,30 @@ function dateLabel(day: string): string {
   return weekday.format(parseDay(day)).replace('.', '');
 }
 
-export function GanttGrid({ plan, employees, onOpenTask }: GanttGridProps) {
+export function GanttGrid({ plan, employees, onOpenTask, onAddTask, onMoveTask, onResizeTask }: GanttGridProps) {
   const days = useMemo(() => enumerateDays(plan.rangeStart, plan.rangeEnd), [plan.rangeStart, plan.rangeEnd]);
   const rows = useMemo(() => buildVisibleRows(plan, employees), [plan, employees]);
   const container = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(1500);
-  const [height, setHeight] = useState(window.innerHeight);
+  const [height, setHeight] = useState(window.innerHeight - 260);
+  const dragRef = useRef<{ task: Task; x: number; mode: 'move' | 'start' | 'end' } | null>(null);
+  const skipClick = useRef(false);
+
+  function endDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    const drag = dragRef.current;
+    dragRef.current = null;
+    if (!drag) return;
+    const delta = Math.round((event.clientX - drag.x) / dayWidth);
+    if (!delta) return;
+    skipClick.current = true;
+    if (drag.mode === 'move') onMoveTask?.(drag.task, delta);
+    else onResizeTask?.(drag.task, drag.mode, delta);
+  }
 
   useEffect(() => {
     const update = () => {
       setWidth(container.current?.clientWidth ?? window.innerWidth);
-      setHeight(window.innerHeight);
+      setHeight(container.current?.clientHeight ?? window.innerHeight - 260);
     };
     update();
     window.addEventListener('resize', update);
@@ -48,7 +62,7 @@ export function GanttGrid({ plan, employees, onOpenTask }: GanttGridProps) {
     else result.push({ monday, count: 1, first: day, last: day });
     return result;
   }, []);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localToday();
 
   return (
     <div className="gantt-shell" ref={container}>
@@ -77,7 +91,7 @@ export function GanttGrid({ plan, employees, onOpenTask }: GanttGridProps) {
               <div key={row.key} className={`gantt-row ${employeeRow ? 'is-employee' : 'is-task'}`} style={{ height: lineHeight }}>
                 <div className="gantt-row-label" style={{ width: labelWidth }}>
                   {employeeRow ? (
-                    <><span className="employee-dot" /><strong>{row.employee.name}</strong><small>{row.employee.role}</small></>
+                    <><span className="employee-dot" /><strong>{row.employee.name}</strong><small>{row.employee.role}</small><button className="employee-add" title={`Добавить задачу: ${row.employee.name}`} onClick={() => onAddTask?.(row.employee.id)}>+</button></>
                   ) : (
                     <><span className="task-indent" /><button title={row.task.title} onClick={() => onOpenTask(row.task)}>{row.task.title}</button>{row.task.linkedTaskId && <span className="link-mark" title="Связанная задача">↗</span>}</>
                   )}
@@ -88,8 +102,12 @@ export function GanttGrid({ plan, employees, onOpenTask }: GanttGridProps) {
                     <button className={`task-bar status-${row.task.status} ${row.task.routine ? 'is-routine' : ''}`}
                       style={{ left: geometry.left + 3, width: Math.max(geometry.width - 6, 12) }}
                       title={`${row.task.title} · ${row.task.startDay}—${row.task.endDay}`}
-                      onClick={() => onOpenTask(row.task)}>
+                      onPointerDown={event => { dragRef.current = { task: row.task, x: event.clientX, mode: (event.target as HTMLElement).dataset.edge as 'start' | 'end' || 'move' }; event.currentTarget.setPointerCapture(event.pointerId); }}
+                      onPointerUp={endDrag}
+                      onClick={() => { if (skipClick.current) { skipClick.current = false; return; } onOpenTask(row.task); }}>
+                      <span className="resize-handle start" data-edge="start" />
                       <span>{row.task.shortLabel || row.task.title}</span>
+                      <span className="resize-handle end" data-edge="end" />
                     </button>
                   )}
                 </div>
