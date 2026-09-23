@@ -8,6 +8,7 @@ import { HistoryPanel } from './HistoryPanel';
 import { PlanCopyDialog } from './PlanCopyDialog';
 import { PlanToolbar } from './PlanToolbar';
 import { TaskEditor } from './TaskEditor';
+import { isTaskInRange } from './ganttGeometry';
 import { usePlanner } from './usePlanner';
 import { sceneDataUrl } from '../export/png';
 import type { ExportScene } from '../export/scene';
@@ -27,6 +28,7 @@ export function App() {
   const [newBacklog, setNewBacklog] = useState(false);
   const [newRoutine, setNewRoutine] = useState(false);
   const [notice, setNotice] = useState('');
+  const [onlyInRange, setOnlyInRange] = useState(() => localStorage.getItem('ganttOnlyInRange') !== 'false');
 
   function showTask(task?: Task, employeeId?: string, backlog = false, routine = false) {
     setPanel(null);
@@ -62,6 +64,8 @@ export function App() {
   }
 
   const reportDate = plan?.reportDay ? new Date(`${plan.reportDay}T00:00:00Z`).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric', timeZone: 'UTC' }) : '';
+  const hiddenTaskCount = plan?.tasks.filter(task => task.startDay && task.endDay &&
+    !isTaskInRange(task, plan.rangeStart, plan.rangeEnd)).length ?? 0;
 
   return (
     <main className="app-shell">
@@ -83,10 +87,11 @@ export function App() {
             onBacklog={() => setPanel('backlog')} onEmployees={() => setPanel('employees')} />
           <div className="plan-summary">
             <div><span className="summary-kicker">ОБЗОР</span><strong>{plan.title}</strong><span className="summary-muted" title={filePath ?? ''}>{filePath ? filePath.split(/[\\/]/).at(-1) : 'Файл не выбран'}</span></div>
+            <label className="period-filter" title="Скрывать задачи, даты которых полностью вне показанного периода"><input type="checkbox" checked={onlyInRange} onChange={event => { setOnlyInRange(event.target.checked); localStorage.setItem('ganttOnlyInRange', String(event.target.checked)); }} /><span>Только в периоде</span>{onlyInRange && hiddenTaskCount > 0 && <small>Скрыто {hiddenTaskCount}</small>}</label>
             <div className="summary-stats"><span><b>{project.employees.length}</b> сотрудника</span><span><b>{plan.tasks.filter(task => task.startDay).length}</b> задачи</span><span><b>{plan.tasks.filter(task => task.status === 'active').length}</b> в работе</span></div>
             <div className="legend"><span><i className="legend-dot waiting" />Ожидает</span><span><i className="legend-dot active" />В работе</span><span><i className="legend-dot done" />Готово</span></div>
           </div>
-          <GanttGrid plan={plan} employees={project.employees} onOpenTask={task => showTask(task)}
+          <GanttGrid plan={plan} employees={project.employees} onlyInRange={onlyInRange} onOpenTask={task => showTask(task)}
             onAddTask={employeeId => showTask(undefined, employeeId)}
             onAddRoutine={employeeId => showTask(undefined, employeeId, false, true)}
             onMoveTask={(task, deltaDays) => tryAct({ type: 'moveTask', planId: plan.id, taskId: task.id, deltaDays })}

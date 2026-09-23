@@ -6,6 +6,7 @@ import { buildVisibleRows, getBarGeometry, rowHeight } from './ganttGeometry';
 export interface GanttGridProps {
   plan: Plan;
   employees: Employee[];
+  onlyInRange: boolean;
   onOpenTask(task: Task): void;
   onAddTask?(employeeId: string): void;
   onAddRoutine?(employeeId: string): void;
@@ -20,9 +21,9 @@ function dateLabel(day: string): string {
   return weekday.format(parseDay(day)).replace('.', '');
 }
 
-export function GanttGrid({ plan, employees, onOpenTask, onAddTask, onAddRoutine, onMoveTask, onResizeTask }: GanttGridProps) {
+export function GanttGrid({ plan, employees, onlyInRange, onOpenTask, onAddTask, onAddRoutine, onMoveTask, onResizeTask }: GanttGridProps) {
   const days = useMemo(() => enumerateDays(plan.rangeStart, plan.rangeEnd), [plan.rangeStart, plan.rangeEnd]);
-  const rows = useMemo(() => buildVisibleRows(plan, employees), [plan, employees]);
+  const rows = useMemo(() => buildVisibleRows(plan, employees, onlyInRange), [plan, employees, onlyInRange]);
   const container = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(1500);
   const [height, setHeight] = useState(window.innerHeight - 260);
@@ -64,6 +65,8 @@ export function GanttGrid({ plan, employees, onOpenTask, onAddTask, onAddRoutine
     return result;
   }, []);
   const today = localToday();
+  const visibleTaskCount = rows.reduce((count, row) => count +
+    (row.kind === 'task' ? 1 : row.kind === 'routine' ? row.tasks.length : 0), 0);
 
   function bar(task: Task) {
     const geometry = getBarGeometry(task, plan.rangeStart, plan.rangeEnd, dayWidth);
@@ -85,7 +88,7 @@ export function GanttGrid({ plan, employees, onOpenTask, onAddTask, onAddRoutine
       <div className="gantt-scroll" aria-label="График задач">
         <div className="gantt-content" style={{ width: tableWidth, ['--label-width' as string]: `${labelWidth}px`, ['--day-width' as string]: `${dayWidth}px` }}>
           <div className="gantt-week-row">
-            <div className="gantt-corner">КОМАНДА И ЗАДАЧИ <span>{plan.tasks.filter(task => task.startDay && task.endDay).length}</span></div>
+            <div className="gantt-corner">КОМАНДА И ЗАДАЧИ <span>{visibleTaskCount}</span></div>
             {weeks.map(week => (
               <div key={week.monday} className="gantt-week" style={{ width: week.count * dayWidth }}>
                 {Number(week.first.slice(-2))}–{Number(week.last.slice(-2))} {month.format(parseDay(week.last))}

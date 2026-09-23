@@ -6,9 +6,14 @@ export type VisibleRow =
   | { key: string; kind: 'task'; employee: Employee; task: Task }
   | { key: string; kind: 'routine'; employee: Employee; tasks: Task[] };
 
-export function buildVisibleRows(plan: Plan, employees: Employee[]): VisibleRow[] {
+export function isTaskInRange(task: Task, rangeStart: Day, rangeEnd: Day): boolean {
+  return Boolean(task.startDay && task.endDay && task.endDay >= rangeStart && task.startDay <= rangeEnd);
+}
+
+export function buildVisibleRows(plan: Plan, employees: Employee[], onlyInRange = false): VisibleRow[] {
   return [...employees].sort((a, b) => a.order - b.order).flatMap(employee => {
-    const tasks = plan.tasks.filter(task => task.employeeId === employee.id && task.startDay && task.endDay)
+    const tasks = plan.tasks.filter(task => task.employeeId === employee.id && task.startDay && task.endDay &&
+      (!onlyInRange || isTaskInRange(task, plan.rangeStart, plan.rangeEnd)))
       .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title, 'ru'));
     const routine = tasks.filter(task => task.routine).sort((a, b) =>
       a.startDay!.localeCompare(b.startDay!) || a.order - b.order);

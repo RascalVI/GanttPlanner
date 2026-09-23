@@ -40,6 +40,24 @@ describe('Gantt geometry', () => {
     expect(routine?.kind === 'routine' && routine.tasks.map(item => item.id)).toEqual(['r1', 'r2']);
   });
 
+  it('hides only tasks fully outside the displayed period when filtering is enabled', () => {
+    const before = { ...task, id: 'before', startDay: '2026-09-10', endDay: '2026-09-13' };
+    const crossing = { ...task, id: 'crossing', startDay: '2026-09-12', endDay: '2026-09-14' };
+    const after = { ...task, id: 'after', startDay: '2026-09-28', endDay: '2026-09-29' };
+    const routineBefore = { ...before, id: 'r-before', routine: true };
+    const routineInside = { ...task, id: 'r-inside', routine: true, startDay: '2026-09-21', endDay: '2026-09-21' };
+    const withTasks = { ...plan, tasks: [before, crossing, task, after, routineBefore, routineInside] };
+    const visible = buildVisibleRows(withTasks, [employee], true);
+    expect(visible.map(row => row.key)).toEqual(['employee:e1', 'task:crossing', 'task:t1', 'routine:e1']);
+    const routine = visible.find(row => row.kind === 'routine');
+    expect(routine?.kind === 'routine' && routine.tasks.map(item => item.id)).toEqual(['r-inside']);
+    expect(buildVisibleRows(withTasks, [employee], false)).toHaveLength(6);
+    expect(buildVisibleRows({ ...withTasks, tasks: [before, routineBefore] }, [employee], true)
+      .map(row => row.key)).toEqual(['employee:e1']);
+    expect(buildVisibleRows({ ...withTasks, rangeStart: '2026-09-28', rangeEnd: '2026-10-04' }, [employee], true)
+      .map(row => row.key)).toEqual(['employee:e1', 'task:after']);
+  });
+
   it('fits a typical plan without making rows unreadable', () => {
     expect(rowHeight(820, 27)).toBeGreaterThanOrEqual(26);
     expect(rowHeight(820, 27) * 27 + 76).toBeLessThanOrEqual(820);
