@@ -11,7 +11,7 @@ export async function writePptx(scenes: ExportScene[], file: string): Promise<vo
   presentation.title = 'График задач команды';
   for (const scene of scenes) {
     const slide = presentation.addSlide();
-    slide.background = { color: 'FFFFFF' };
+    slide.background = { color: 'F2F7FD' };
     for (const item of scene.items) {
       const x = item.x / UNITS_PER_INCH;
       const y = item.y / UNITS_PER_INCH;
