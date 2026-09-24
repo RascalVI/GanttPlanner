@@ -20,6 +20,9 @@ export function restoreRevision(project: Project, revisionId: string, editorName
   const plans = exists
     ? project.plans.map(item => item.id === snapshot.id ? snapshot : item)
     : [...project.plans, snapshot];
-  return commitRevision({ ...project, plans }, snapshot.id,
+  const restoredEmployeeIds = new Set(snapshot.tasks.map(task => task.employeeId));
+  const employees = project.employees.map(employee => restoredEmployeeIds.has(employee.id)
+    ? { ...employee, archived: false } : employee);
+  return commitRevision({ ...project, plans, employees }, snapshot.id,
     `Восстановлена версия от ${new Date(revision.at).toLocaleString('ru-RU')}`, editorName);
 }

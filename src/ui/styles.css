@@ -173,6 +173,12 @@ body { background: radial-gradient(circle at 14% 4%, #f8fbff 0, #edf4fc 46%, #e7
 .task-bar.status-active { background: linear-gradient(105deg, #4b79df, #6b9af4); }
 .task-bar.status-done { background: linear-gradient(105deg, #7165d9, #8b7ce9); }
 .task-bar.is-routine { background: linear-gradient(105deg, #438daf, #63b3cc); }
+.draggable-task { cursor: grab; touch-action: none; user-select: none; }
+.draggable-task:active { cursor: grabbing; }
+.draggable-task.is-dragging { opacity: .55; }
+.gantt-row.drop-target .gantt-row-label { background: #dceafd; box-shadow: inset 4px 0 #527fe0; }
+.gantt-row.drop-target .gantt-row-days { background: #edf4ff; }
+.gantt-row.drop-target.is-employee .gantt-row-days > span { background: #dceafd; }
 .empty-state { background: linear-gradient(120deg, #e2edfc, #f6faff); border-color: #d3e2f5; border-radius: 22px; }
 .empty-symbol { background: #d3e4fc; color: #4c74ce; }
 .empty-state p { color: #6d80a0; }
@@ -199,6 +205,14 @@ body { background: radial-gradient(circle at 14% 4%, #f8fbff 0, #edf4fc 46%, #e7
 .history-pin { background: #80a2e5; }
 .history-preview > span:last-of-type { color: #667fa6; }
 .export-preview { border-color: #cbdcf2; border-radius: 14px; box-shadow: 0 8px 22px #3c66a829; }
+.employee-removal { margin-top: 16px; padding: 15px; border: 1px solid #e7c5c6; border-radius: 14px; background: #fff8f8; }
+.employee-removal strong { color: #683b46; font-size: 14px; }
+.employee-removal p { margin: 8px 0 12px; color: #765b66; line-height: 1.4; font-size: 12px; }
+.employee-removal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.employee-removal-actions button { border: 0; border-radius: 999px; padding: 9px 12px; font-size: 12px; font-weight: 700; }
+.danger-button { background: #a7495c; color: white; }
+.danger-button:hover { background: #8e354b; }
+.danger-button:disabled { opacity: .48; cursor: not-allowed; }
 @media (max-width: 900px) {
   .app-shell { padding: 10px; }
   .app-header { min-height: 62px; }

@@ -20,7 +20,7 @@ const paths = await packager({
     /^\/\.worktrees($|\/)/,
     /^\/\.npm-cache($|\/)/,
     /^\/\.electron-cache($|\/)/,
-    /^\/GanttPlanner-portable\.zip$/i,
+    /^\/GanttPlanner-portable.*\.zip$/i,
     /^\/docs($|\/)/,
     /^\/examples($|\/)/,
     /^\/release($|\/)/,

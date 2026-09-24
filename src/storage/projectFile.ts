@@ -60,7 +60,8 @@ export function validateProject(value: unknown): Project {
   const employees = value.employees as Employee[];
   for (const employee of employees) {
     if (!object(employee) || !text(employee.id) || !text(employee.name) ||
-        !text(employee.role) || !Number.isFinite(employee.order)) {
+        !text(employee.role) || !Number.isFinite(employee.order) ||
+        (employee.archived !== undefined && typeof employee.archived !== 'boolean')) {
       throw new Error('Повреждены данные сотрудника');
     }
   }

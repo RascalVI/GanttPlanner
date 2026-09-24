@@ -7,6 +7,7 @@ export type PlannerAction =
   | { type: 'saveTask'; planId: string; task: Task }
   | { type: 'deleteTask'; planId: string; taskId: string }
   | { type: 'moveTask'; planId: string; taskId: string; deltaDays: number }
+  | { type: 'assignTask'; planId: string; taskId: string; employeeId: string }
   | { type: 'resizeTask'; planId: string; taskId: string; edge: 'start' | 'end'; deltaDays: number }
   | { type: 'reorderTask'; planId: string; taskId: string; direction: -1 | 1 }
   | { type: 'copyPlan'; sourceId: string; reportDay: string; rangeStart: string; rangeEnd: string }
@@ -14,7 +15,7 @@ export type PlannerAction =
   | { type: 'renamePlan'; planId: string; title: string }
   | { type: 'addEmployee'; employee: Employee }
   | { type: 'updateEmployee'; employee: Employee }
-  | { type: 'removeEmployee'; employeeId: string };
+  | { type: 'removeEmployee'; employeeId: string; replacementEmployeeId?: string };
 
 export function createProject(reportDay: string, employees: Employee[]): Project {
   const start = mondayOf(reportDay);
@@ -46,7 +47,7 @@ function findTask(plan: Plan, taskId: string): Task {
 export function applyPlannerAction(project: Project, action: PlannerAction, editorName: string | null): Project {
   switch (action.type) {
     case 'saveTask': {
-      if (!project.employees.some(item => item.id === action.task.employeeId)) throw new Error('Сотрудник не найден');
+      if (!project.employees.some(item => item.id === action.task.employeeId && !item.archived)) throw new Error('Сотрудник не найден');
       if (action.task.linkedTaskId === action.task.id) throw new Error('Задача не может ссылаться на себя');
       const plan = project.plans.find(item => item.id === action.planId);
       if (action.task.linkedTaskId && !plan?.tasks.some(item => item.id === action.task.linkedTaskId)) {
@@ -63,6 +64,19 @@ export function applyPlannerAction(project: Project, action: PlannerAction, edit
     case 'moveTask':
       return editPlan(project, action.planId, 'Передвинута задача', editorName, current =>
         updateTask(current, moveTask(findTask(current, action.taskId), action.deltaDays)));
+    case 'assignTask': {
+      if (!project.employees.some(item => item.id === action.employeeId && !item.archived)) throw new Error('Сотрудник не найден');
+      const plan = project.plans.find(item => item.id === action.planId);
+      if (!plan) throw new Error('План не найден');
+      const existingTask = findTask(plan, action.taskId);
+      if (existingTask.routine) throw new Error('Текучку перенесите через редактор задачи');
+      if (existingTask.employeeId === action.employeeId) return project;
+      return editPlan(project, action.planId, 'Задача передана другому сотруднику', editorName, current => {
+        const order = Math.max(-1, ...current.tasks.filter(item => item.employeeId === action.employeeId)
+          .map(item => item.order)) + 1;
+        return updateTask(current, { ...existingTask, employeeId: action.employeeId, order });
+      });
+    }
     case 'resizeTask':
       return editPlan(project, action.planId, 'Изменён срок задачи', editorName, current =>
         updateTask(current, resizeTask(findTask(current, action.taskId), action.edge, action.deltaDays)));
@@ -83,7 +97,8 @@ export function applyPlannerAction(project: Project, action: PlannerAction, edit
     case 'copyPlan': {
       const source = project.plans.find(item => item.id === action.sourceId);
       if (!source) throw new Error('Исходный план не найден');
-      const next = copyPlan(source, action.reportDay, action.rangeStart, action.rangeEnd, project.employees);
+      const next = copyPlan(source, action.reportDay, action.rangeStart, action.rangeEnd,
+        project.employees.filter(employee => !employee.archived));
       return commitRevision({ ...project, plans: [...project.plans, next] }, next.id, 'Создана копия плана', editorName);
     }
     case 'changeRange':
@@ -92,24 +107,59 @@ export function applyPlannerAction(project: Project, action: PlannerAction, edit
         const existingWeeks = new Set(weeksInRange(current.rangeStart, current.rangeEnd));
         const addedWeeks = weeksInRange(action.rangeStart, action.rangeEnd).filter(week => !existingWeeks.has(week));
         return { ...current, rangeStart: action.rangeStart, rangeEnd: action.rangeEnd,
-          tasks: addRoutineTasks(current.tasks, addedWeeks, project.employees, action.rangeStart) };
+          tasks: addRoutineTasks(current.tasks, addedWeeks, project.employees.filter(employee => !employee.archived), action.rangeStart) };
       });
     case 'renamePlan':
       return editPlan(project, action.planId, 'Переименован план', editorName, current => {
         if (!action.title.trim()) throw new Error('Укажите название плана');
         return { ...current, title: action.title.trim() };
       });
-    case 'addEmployee':
+    case 'addEmployee': {
       if (project.employees.some(item => item.id === action.employee.id)) throw new Error('Сотрудник уже существует');
-      return { ...project, employees: [...project.employees, action.employee] };
+      if (!action.employee.name.trim() || !action.employee.role.trim()) throw new Error('Укажите имя и роль участника');
+      const next = {
+        ...project,
+        employees: [...project.employees, action.employee],
+        plans: project.plans.map(plan => ({ ...plan, tasks: addRoutineTasks(
+          plan.tasks, weeksInRange(plan.rangeStart, plan.rangeEnd), [action.employee], plan.rangeStart,
+        ) })),
+      };
+      return next.plans.reduce((current, plan) => commitRevision(current, plan.id,
+        `Добавлен участник ${action.employee.name}`, editorName), next);
+    }
     case 'updateEmployee':
       if (!project.employees.some(item => item.id === action.employee.id)) throw new Error('Сотрудник не найден');
       return { ...project, employees: project.employees.map(item => item.id === action.employee.id ? action.employee : item) };
-    case 'removeEmployee':
-      if (project.plans.some(plan => plan.tasks.some(task => task.employeeId === action.employeeId)) ||
-          project.revisions.some(revision => revision.planSnapshot.tasks.some(task => task.employeeId === action.employeeId))) {
-        throw new Error('Нельзя удалить сотрудника, у которого есть задачи в планах или истории');
+    case 'removeEmployee': {
+      const employee = project.employees.find(item => item.id === action.employeeId && !item.archived);
+      if (!employee) throw new Error('Участник не найден');
+      if (project.employees.filter(item => !item.archived).length < 2) {
+        throw new Error('Сначала добавьте другого участника');
       }
-      return { ...project, employees: project.employees.filter(item => item.id !== action.employeeId) };
+      const hasWork = project.plans.some(plan => plan.tasks.some(task =>
+        task.employeeId === employee.id && !task.routine));
+      const replacement = project.employees.find(item => item.id === action.replacementEmployeeId &&
+        !item.archived && item.id !== employee.id);
+      if (hasWork && !replacement) throw new Error('Выберите участника для передачи задач');
+      if (action.replacementEmployeeId && !replacement) throw new Error('Участник для передачи задач не найден');
+      const next = {
+        ...project,
+        employees: project.employees.map(item => item.id === employee.id ? { ...item, archived: true } : item),
+        plans: project.plans.map(plan => {
+          const routineIds = new Set(plan.tasks.filter(task => task.employeeId === employee.id && task.routine)
+            .map(task => task.id));
+          let order = replacement ? Math.max(-1, ...plan.tasks.filter(task => task.employeeId === replacement.id)
+            .map(task => task.order)) + 1 : 0;
+          return { ...plan, tasks: plan.tasks.filter(task => !routineIds.has(task.id)).map(task => ({
+            ...task,
+            employeeId: task.employeeId === employee.id ? replacement!.id : task.employeeId,
+            order: task.employeeId === employee.id ? order++ : task.order,
+            linkedTaskId: task.linkedTaskId && routineIds.has(task.linkedTaskId) ? null : task.linkedTaskId,
+          })) };
+        }),
+      };
+      return next.plans.reduce((current, plan) => commitRevision(current, plan.id,
+        `Удалён участник ${employee.name}`, editorName), next);
+    }
   }
 }

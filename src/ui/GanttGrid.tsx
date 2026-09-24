@@ -11,6 +11,7 @@ export interface GanttGridProps {
   onAddTask?(employeeId: string): void;
   onAddRoutine?(employeeId: string): void;
   onMoveTask?(task: Task, deltaDays: number): void;
+  onAssignTask?(task: Task, employeeId: string): void;
   onResizeTask?(task: Task, edge: 'start' | 'end', deltaDays: number): void;
 }
 
@@ -21,7 +22,7 @@ function dateLabel(day: string): string {
   return weekday.format(parseDay(day)).replace('.', '');
 }
 
-export function GanttGrid({ plan, employees, onlyInRange, onOpenTask, onAddTask, onAddRoutine, onMoveTask, onResizeTask }: GanttGridProps) {
+export function GanttGrid({ plan, employees, onlyInRange, onOpenTask, onAddTask, onAddRoutine, onAssignTask, onMoveTask, onResizeTask }: GanttGridProps) {
   const days = useMemo(() => enumerateDays(plan.rangeStart, plan.rangeEnd), [plan.rangeStart, plan.rangeEnd]);
   const rows = useMemo(() => buildVisibleRows(plan, employees, onlyInRange), [plan, employees, onlyInRange]);
   const container = useRef<HTMLDivElement>(null);
@@ -29,6 +30,35 @@ export function GanttGrid({ plan, employees, onlyInRange, onOpenTask, onAddTask,
   const [height, setHeight] = useState(window.innerHeight - 260);
   const dragRef = useRef<{ task: Task; x: number; mode: 'move' | 'start' | 'end' } | null>(null);
   const skipClick = useRef(false);
+  const assignmentDrag = useRef<{ task: Task; x: number; y: number; moved: boolean } | null>(null);
+  const skipAssignmentClick = useRef(false);
+  const [draggedTask, setDraggedTask] = useState<Task | null>(null);
+  const [dropEmployeeId, setDropEmployeeId] = useState<string | null>(null);
+
+  function employeeAt(x: number, y: number): string | null {
+    return document.elementFromPoint(x, y)?.closest<HTMLElement>('.gantt-row')?.dataset.employeeId ?? null;
+  }
+
+  function moveAssignment(event: React.PointerEvent<HTMLButtonElement>) {
+    const drag = assignmentDrag.current;
+    if (!drag) return;
+    if (!drag.moved && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 6) return;
+    drag.moved = true;
+    setDraggedTask(drag.task);
+    const target = employeeAt(event.clientX, event.clientY);
+    setDropEmployeeId(target !== drag.task.employeeId ? target : null);
+  }
+
+  function endAssignment(event: React.PointerEvent<HTMLButtonElement>) {
+    const drag = assignmentDrag.current;
+    assignmentDrag.current = null;
+    setDraggedTask(null);
+    setDropEmployeeId(null);
+    if (!drag?.moved) return;
+    skipAssignmentClick.current = true;
+    const target = employeeAt(event.clientX, event.clientY);
+    if (target && target !== drag.task.employeeId) onAssignTask?.(drag.task, target);
+  }
 
   function endDrag(event: React.PointerEvent<HTMLButtonElement>) {
     const drag = dragRef.current;
@@ -106,14 +136,18 @@ export function GanttGrid({ plan, employees, onlyInRange, onOpenTask, onAddTask,
           {rows.map(row => {
             const employeeRow = row.kind === 'employee';
             return (
-              <div key={row.key} className={`gantt-row ${employeeRow ? 'is-employee' : row.kind === 'routine' ? 'is-task routine-row' : 'is-task'}`} style={{ height: lineHeight }}>
+              <div key={row.key} data-employee-id={row.employee.id} className={`gantt-row ${employeeRow ? 'is-employee' : row.kind === 'routine' ? 'is-task routine-row' : 'is-task'} ${dropEmployeeId === row.employee.id ? 'drop-target' : ''}`} style={{ height: lineHeight }}>
                 <div className="gantt-row-label" style={{ width: labelWidth }}>
                   {employeeRow ? (
                     <><span className="employee-dot" /><strong>{row.employee.name}</strong><small>{row.employee.role}</small><button className="employee-add" title={`Добавить задачу: ${row.employee.name}`} onClick={() => onAddTask?.(row.employee.id)}>+</button></>
                   ) : row.kind === 'routine' ? (
                     <><span className="task-indent" /><span className="routine-label">Текучка</span><button className="employee-add" title={`Добавить текучку: ${row.employee.name}`} aria-label={`Добавить текучку: ${row.employee.name}`} onClick={() => onAddRoutine?.(row.employee.id)}>+</button></>
                   ) : (
-                    <><span className="task-indent" /><button title={row.task.title} onClick={() => onOpenTask(row.task)}>{row.task.title}</button>{row.task.linkedTaskId && <span className="link-mark" title="Связанная задача">↗</span>}</>
+                    <><span className="task-indent" /><button className={`draggable-task ${draggedTask?.id === row.task.id ? 'is-dragging' : ''}`} title={`${row.task.title} · перетащите к другому участнику`}
+                      onPointerDown={event => { assignmentDrag.current = { task: row.task, x: event.clientX, y: event.clientY, moved: false }; event.currentTarget.setPointerCapture(event.pointerId); }}
+                      onPointerMove={moveAssignment} onPointerUp={endAssignment}
+                      onPointerCancel={() => { assignmentDrag.current = null; setDraggedTask(null); setDropEmployeeId(null); }}
+                      onClick={() => { if (skipAssignmentClick.current) { skipAssignmentClick.current = false; return; } onOpenTask(row.task); }}>{row.task.title}</button>{row.task.linkedTaskId && <span className="link-mark" title="Связанная задача">↗</span>}</>
                   )}
                 </div>
                 <div className="gantt-row-days" style={{ width: days.length * dayWidth }}>

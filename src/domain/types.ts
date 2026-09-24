@@ -6,6 +6,7 @@ export interface Employee {
   name: string;
   role: string;
   order: number;
+  archived?: boolean;
 }
 
 export interface Task {

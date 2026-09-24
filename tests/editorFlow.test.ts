@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { applyPlannerAction, createProject } from '../src/domain/plannerReducer';
+import { restoreRevision } from '../src/domain/history';
+import { validateProject } from '../src/storage/projectFile';
 import type { Task } from '../src/domain/types';
 
 function setup() {
@@ -45,6 +47,22 @@ describe('planner actions', () => {
     expect(resized.plans[0].tasks.find(item => item.id === 't1')?.endDay).toBe('2026-09-21');
   });
 
+  it('transfers a task to another employee without changing its dates and records the change', () => {
+    const initial = setup();
+    const planId = initial.plans[0].id;
+    const added = applyPlannerAction(initial, { type: 'saveTask', planId, task: task() }, null);
+    const assigned = applyPlannerAction(added, { type: 'assignTask', planId, taskId: 't1', employeeId: 'e2' }, null);
+    expect(assigned.plans[0].tasks.find(item => item.id === 't1')).toMatchObject({
+      employeeId: 'e2', startDay: '2026-09-17', endDay: '2026-09-18', status: 'waiting',
+    });
+    expect(assigned.revisions.at(-1)?.action).toBe('Задача передана другому сотруднику');
+    expect(assigned.revisions).toHaveLength(added.revisions.length + 1);
+    expect(applyPlannerAction(assigned, { type: 'assignTask', planId, taskId: 't1', employeeId: 'e2' }, null))
+      .toBe(assigned);
+    expect(() => applyPlannerAction(added, { type: 'assignTask', planId, taskId: 't1', employeeId: 'missing' }, null))
+      .toThrow('Сотрудник не найден');
+  });
+
   it('keeps backlog tasks unscheduled until dates are entered and preserves links', () => {
     const initial = setup();
     const id = initial.plans[0].id;
@@ -54,6 +72,15 @@ describe('planner actions', () => {
     expect(second.plans[0].tasks.find(item => item.id === 't2')).toMatchObject({ startDay: null, linkedTaskId: 't1' });
     const scheduled = applyPlannerAction(second, { type: 'saveTask', planId: id, task: { ...backlog, startDay: '2026-09-21', endDay: '2026-09-22' } }, null);
     expect(scheduled.plans[0].tasks.find(item => item.id === 't2')?.startDay).toBe('2026-09-21');
+  });
+
+  it('adds a participant with routine reservations for each displayed week', () => {
+    const initial = setup();
+    const next = applyPlannerAction(initial, { type: 'addEmployee', employee: {
+      id: 'e3', name: 'София', role: 'Дизайн', order: 2,
+    } }, null);
+    expect(next.employees.some(item => item.id === 'e3')).toBe(true);
+    expect(next.plans[0].tasks.filter(item => item.routine && item.employeeId === 'e3')).toHaveLength(2);
   });
 
   it('copies a plan independently and does not re-add deleted routine in it', () => {
@@ -68,19 +95,40 @@ describe('planner actions', () => {
     expect(deleted.plans[0].tasks).toEqual(initial.plans[0].tasks);
   });
 
-  it('refuses to remove an employee while tasks refer to them', () => {
+  it('requires a replacement before removing a participant with work tasks', () => {
     const initial = setup();
-    expect(() => applyPlannerAction(initial, { type: 'removeEmployee', employeeId: 'e1' }, null)).toThrow('задач');
+    const planId = initial.plans[0].id;
+    const withTask = applyPlannerAction(initial, { type: 'saveTask', planId, task: task() }, null);
+    expect(() => applyPlannerAction(withTask, { type: 'removeEmployee', employeeId: 'e1' }, null))
+      .toThrow('Выберите участника');
+    const removed = applyPlannerAction(withTask, { type: 'removeEmployee', employeeId: 'e1', replacementEmployeeId: 'e2' }, null);
+    expect(removed.employees.find(item => item.id === 'e1')?.archived).toBe(true);
+    expect(removed.plans[0].tasks.find(item => item.id === 't1')?.employeeId).toBe('e2');
+    expect(removed.plans[0].tasks.some(item => item.employeeId === 'e1')).toBe(false);
+    expect(() => validateProject(removed)).not.toThrow();
   });
 
-  it('keeps employees referenced by an older revision', () => {
+  it('keeps an old participant in history and restores them with an older plan', () => {
     let project = setup();
     const planId = project.plans[0].id;
-    for (const routine of project.plans[0].tasks.filter(item => item.employeeId === 'e1')) {
-      project = applyPlannerAction(project, { type: 'deleteTask', planId, taskId: routine.id }, null);
-    }
+    const initialRevision = project.revisions.find(item => item.planId === planId)!;
+    project = applyPlannerAction(project, { type: 'removeEmployee', employeeId: 'e1' }, null);
     expect(project.plans[0].tasks.some(item => item.employeeId === 'e1')).toBe(false);
-    expect(() => applyPlannerAction(project, { type: 'removeEmployee', employeeId: 'e1' }, null)).toThrow('истории');
+    expect(project.revisions.some(item => item.planSnapshot.tasks.some(task => task.employeeId === 'e1'))).toBe(true);
+    const restored = restoreRevision(project, initialRevision.id, null);
+    expect(restored.employees.find(item => item.id === 'e1')?.archived).toBe(false);
+    expect(restored.plans[0].tasks.some(item => item.employeeId === 'e1')).toBe(true);
+  });
+
+  it('does not add routine for removed participants in copied or extended plans', () => {
+    const initial = setup();
+    const removed = applyPlannerAction(initial, { type: 'removeEmployee', employeeId: 'e1' }, null);
+    const copied = applyPlannerAction(removed, { type: 'copyPlan', sourceId: removed.plans[0].id,
+      reportDay: '2026-09-24', rangeStart: '2026-09-21', rangeEnd: '2026-10-04' }, null);
+    expect(copied.plans[1].tasks.some(item => item.employeeId === 'e1')).toBe(false);
+    const extended = applyPlannerAction(copied, { type: 'changeRange', planId: copied.plans[1].id,
+      rangeStart: '2026-09-21', rangeEnd: '2026-10-11' }, null);
+    expect(extended.plans[1].tasks.some(item => item.employeeId === 'e1')).toBe(false);
   });
 
   it('adds routine reservations when the visible range extends into another week', () => {
