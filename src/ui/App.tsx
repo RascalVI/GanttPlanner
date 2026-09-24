@@ -70,7 +70,7 @@ export function App() {
   return (
     <main className="app-shell">
       <header className="app-header">
-        <div className="brand-lockup"><span className="app-mark">П<span>•</span></span><div><span className="brand-overline">ПЛАНИРОВАНИЕ КОМАНДЫ</span><h1>Разработка страниц портала</h1></div></div>
+        <div className="brand-lockup"><span className="app-mark"><img src="/app-icon.png" alt="" /></span><div><span className="brand-overline">ПЛАНИРОВАНИЕ КОМАНДЫ</span><h1>Разработка страниц портала</h1></div></div>
         <div className="header-side"><span className={`offline-pill save-${saveState}`}><i />{saveState === 'saved' ? 'Сохранено' : saveState === 'saving' ? 'Сохранение…' : saveState === 'error' ? 'Ошибка записи' : saveState === 'preview' ? 'Предпросмотр' : 'Не сохранено'}</span><span className="header-date">{reportDate.toUpperCase()}</span></div>
       </header>
 

@@ -100,8 +100,8 @@ button { cursor: pointer; }
 body { background: radial-gradient(circle at 14% 4%, #f8fbff 0, #edf4fc 46%, #e7f0fa 100%); }
 .app-shell { padding: 13px 22px 18px; gap: 10px; }
 .app-header { min-height: 74px; padding: 0 14px; }
-.app-mark { background: linear-gradient(145deg, #668eea, #756de0); color: #fff; border-radius: 15px; box-shadow: 0 10px 25px #5c83d039; }
-.app-mark span { color: #bbd9ff; }
+.app-mark { background: transparent; border-radius: 0; box-shadow: none; }
+.app-mark img { display: block; width: 43px; height: 43px; }
 .brand-overline, .eyebrow, .summary-kicker { color: #7286a8; }
 .app-header h1 { color: var(--ink); font-weight: 700; }
 .header-date { color: #7385a0; }
