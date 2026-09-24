@@ -5,5 +5,5 @@ dist-electron/
 release/
 .npm-cache/
 .electron-cache/
-GanttPlanner-portable.zip
+GanttPlanner-portable*.zip
 ~$*.pptx
