@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Task } from '../domain/types';
 import { BacklogPanel } from './BacklogPanel';
 import { EmployeesPanel } from './EmployeesPanel';
@@ -12,6 +12,7 @@ import { isTaskInRange } from './ganttGeometry';
 import { usePlanner } from './usePlanner';
 import { sceneDataUrl } from '../export/png';
 import type { ExportScene } from '../export/scene';
+import { savedZoom, zoomStep } from './zoom';
 
 type Panel = 'backlog' | 'history' | 'employees' | null;
 
@@ -30,6 +31,30 @@ export function App() {
   const [newRoutine, setNewRoutine] = useState(false);
   const [notice, setNotice] = useState('');
   const [onlyInRange, setOnlyInRange] = useState(() => localStorage.getItem('ganttOnlyInRange') !== 'false');
+  const [zoom, setZoom] = useState(() => savedZoom(localStorage.getItem('ganttZoom')));
+
+  useEffect(() => {
+    localStorage.setItem('ganttZoom', String(zoom));
+    if (window.gantt?.setZoomFactor) window.gantt.setZoomFactor(zoom);
+    else {
+      document.documentElement.style.zoom = String(zoom);
+      document.documentElement.style.setProperty('--inverse-browser-zoom', String(1 / zoom));
+    }
+  }, [zoom]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!event.ctrlKey || event.altKey || event.metaKey) return;
+      if (event.key === '0') { event.preventDefault(); setZoom(1); }
+      else if (event.key === '+' || event.key === '=' || event.code === 'NumpadAdd') {
+        event.preventDefault(); setZoom(current => zoomStep(current, 1));
+      } else if (event.key === '-' || event.key === '_' || event.code === 'NumpadSubtract') {
+        event.preventDefault(); setZoom(current => zoomStep(current, -1));
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   function showTask(task?: Task, employeeId?: string, backlog = false, routine = false) {
     setPanel(null);
@@ -72,7 +97,11 @@ export function App() {
     <main className="app-shell">
       <header className="app-header">
         <div className="brand-lockup"><span className="app-mark"><img src="./app-icon.png" alt="" /></span><div><span className="brand-overline">ПЛАНИРОВАНИЕ КОМАНДЫ</span><h1>Разработка страниц портала</h1></div></div>
-        <div className="header-side"><span className={`offline-pill save-${saveState}`}><i />{saveState === 'saved' ? 'Сохранено' : saveState === 'saving' ? 'Сохранение…' : saveState === 'error' ? 'Ошибка записи' : saveState === 'preview' ? 'Предпросмотр' : 'Не сохранено'}</span><span className="header-date">{reportDate.toUpperCase()}</span></div>
+        <div className="header-side"><div className="zoom-control" role="group" aria-label="Масштаб интерфейса">
+          <button title="Уменьшить масштаб (Ctrl+−)" aria-label="Уменьшить масштаб" disabled={zoom <= .75} onClick={() => setZoom(current => zoomStep(current, -1))}>−</button>
+          <button className="zoom-value" title="Сбросить масштаб (Ctrl+0)" aria-label={`Масштаб ${Math.round(zoom * 100)}%. Сбросить до 100%`} onClick={() => setZoom(1)}>{Math.round(zoom * 100)}%</button>
+          <button title="Увеличить масштаб (Ctrl++)" aria-label="Увеличить масштаб" disabled={zoom >= 1.5} onClick={() => setZoom(current => zoomStep(current, 1))}>+</button>
+        </div><span className={`offline-pill save-${saveState}`}><i />{saveState === 'saved' ? 'Сохранено' : saveState === 'saving' ? 'Сохранение…' : saveState === 'error' ? 'Ошибка записи' : saveState === 'preview' ? 'Предпросмотр' : 'Не сохранено'}</span><span className="header-date">{reportDate.toUpperCase()}</span></div>
       </header>
 
       {project && plan ? (

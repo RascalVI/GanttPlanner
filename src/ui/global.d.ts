@@ -11,6 +11,7 @@ declare global {
       saveProjectAs(project: Project): Promise<BridgeResult<{ path: string }>>;
       exportPptx(scenes: ExportScene[]): Promise<BridgeResult<{ path: string }>>;
       savePng(files: { path: string; dataUrls: string[] }): Promise<BridgeResult<{ paths: string[] }>>;
+      setZoomFactor(factor: number): void;
     };
   }
 }

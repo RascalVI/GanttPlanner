@@ -22,7 +22,7 @@ const HEIGHT = 1080;
 const LEFT = 520;
 const RIGHT = 1848;
 const CONTENT_TOP = 227;
-const ROW_HEIGHT = 26;
+const CONTENT_BOTTOM = 996;
 const MAX_ROWS = 29;
 const MAX_DAYS = 35;
 
@@ -80,6 +80,10 @@ function drawPage(plan: Plan, rows: Row[], start: Day, end: Day, page: number, t
   const taskIds: string[] = [];
   const days = enumerateDays(start, end);
   const dayWidth = (RIGHT - LEFT) / days.length;
+  const rowHeight = Math.min(58, Math.floor((CONTENT_BOTTOM - CONTENT_TOP) / Math.max(rows.length, 1)));
+  const rowFont = Math.min(20, Math.max(14, rowHeight * .37));
+  const employeeFont = Math.min(20, Math.max(15, rowHeight * .39));
+  const barHeight = Math.min(34, Math.max(18, rowHeight * .63));
   rect(items, 0, 0, WIDTH, HEIGHT, 'F2F7FD');
   rect(items, 32, 24, 1856, 1032, 'DDE9F8', undefined, undefined, 30);
   rect(items, 56, 48, 1808, 108, 'C5D8F6', undefined, undefined, 24);
@@ -103,9 +107,9 @@ function drawPage(plan: Plan, rows: Row[], start: Day, end: Day, page: number, t
     }
     tx(items, String(Number(day.slice(-2))), x + 2, 204, dayWidth - 4, 19, 15,
       weekend ? '8C9CB4' : colors.ink, true, 'center');
-    items.push({ type: 'line', x, y: 224, w: 0, h: rows.length * ROW_HEIGHT + 3, color: colors.grid, lineWidth: 1 });
+    items.push({ type: 'line', x, y: 224, w: 0, h: rows.length * rowHeight + 3, color: colors.grid, lineWidth: 1 });
   }
-  items.push({ type: 'line', x: RIGHT, y: 224, w: 0, h: rows.length * ROW_HEIGHT + 3, color: colors.grid, lineWidth: 1 });
+  items.push({ type: 'line', x: RIGHT, y: 224, w: 0, h: rows.length * rowHeight + 3, color: colors.grid, lineWidth: 1 });
   items.push({ type: 'line', x: 70, y: 224, w: 1780, h: 0, color: 'CEDDF0', lineWidth: 1 });
 
   function drawTask(task: Task, y: number) {
@@ -114,25 +118,28 @@ function drawPage(plan: Plan, rows: Row[], start: Day, end: Day, page: number, t
     const visibleEnd = task.endDay! > end ? end : task.endDay!;
     const x = LEFT + daysBetween(start, visibleStart) * dayWidth + 3;
     const width = daysInclusive(visibleStart, visibleEnd) * dayWidth - 6;
-    rect(items, x, y + 4, width, 18, statusColor(task), 'task-bar', task.id, 8);
-    if (width >= 48) tx(items, task.shortLabel || task.title, x + 8, y + 5, width - 16, 17, 11, colors.white, true, 'left', 'bar-label', task.id);
+    const barY = y + (rowHeight - barHeight) / 2;
+    rect(items, x, barY, width, barHeight, statusColor(task), 'task-bar', task.id, 8);
+    if (width >= 48) tx(items, task.shortLabel || task.title, x + 8, barY + 1, width - 16, barHeight - 2,
+      Math.min(16, Math.max(11, rowHeight * .32)), colors.white, true, 'left', 'bar-label', task.id);
   }
 
   rows.forEach((row, index) => {
-    const y = CONTENT_TOP + index * ROW_HEIGHT;
+    const y = CONTENT_TOP + index * rowHeight;
     if (row.kind === 'employee') {
-      rect(items, 70, y, 1780, ROW_HEIGHT, colors.pale);
-      rect(items, 84, y + 9, 7, 7, '5E83DF', undefined, undefined, 4);
-      tx(items, row.employee.name, 102, y + 2, 305, 22, 15, colors.ink, true);
-      tx(items, row.employee.role.toUpperCase(), 367, y + 3, 120, 20, 10, colors.muted, true, 'right');
+      rect(items, 70, y, 1780, rowHeight, colors.pale);
+      rect(items, 84, y + (rowHeight - 7) / 2, 7, 7, '5E83DF', undefined, undefined, 4);
+      tx(items, row.employee.name, 102, y + 2, 305, rowHeight - 4, employeeFont, colors.ink, true);
+      tx(items, row.employee.role.toUpperCase(), 367, y + 2, 120, rowHeight - 4,
+        Math.min(14, Math.max(10, rowHeight * .27)), colors.muted, true, 'right');
     } else if (row.kind === 'task') {
-      tx(items, row.task.title, 101, y + 3, 392, 20, 14, colors.ink, false, 'left', 'task-title', row.task.id);
+      tx(items, row.task.title, 101, y + 2, 392, rowHeight - 4, rowFont, colors.ink, false, 'left', 'task-title', row.task.id);
       drawTask(row.task, y);
     } else {
-      tx(items, 'Текучка', 101, y + 3, 392, 20, 14, '337F9D', true, 'left', 'task-title');
+      tx(items, 'Текучка', 101, y + 2, 392, rowHeight - 4, rowFont, '337F9D', true, 'left', 'task-title');
       row.tasks.forEach(task => drawTask(task, y));
     }
-    items.push({ type: 'line', x: 70, y: y + ROW_HEIGHT, w: 1780, h: 0, color: colors.grid, lineWidth: .6 });
+    items.push({ type: 'line', x: 70, y: y + rowHeight, w: 1780, h: 0, color: colors.grid, lineWidth: .6 });
   });
 
   const legendY = 1018;

@@ -3,7 +3,7 @@
 body { margin: 0; }
 button, input, select { font: inherit; }
 button { cursor: pointer; }
-.app-shell { height: 100vh; min-height: 650px; display: flex; flex-direction: column; padding: 0 22px 18px; gap: 10px; overflow: hidden; }
+.app-shell { height: calc(100vh * var(--inverse-browser-zoom, 1)); min-height: 650px; display: flex; flex-direction: column; padding: 0 22px 18px; gap: 10px; overflow: hidden; }
 .app-header { min-height: 78px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .brand-lockup { display: flex; align-items: center; gap: 14px; }
 .app-mark { width: 43px; height: 43px; display: grid; place-items: center; background: #173f36; color: #eff8f2; border-radius: 12px; font-size: 25px; font-weight: 800; line-height: 1; letter-spacing: -.11em; }
@@ -105,6 +105,11 @@ body { background: radial-gradient(circle at 14% 4%, #f8fbff 0, #edf4fc 46%, #e7
 .brand-overline, .eyebrow, .summary-kicker { color: #7286a8; }
 .app-header h1 { color: var(--ink); font-weight: 700; }
 .header-date { color: #7385a0; }
+.zoom-control { display: inline-flex; align-items: center; flex: none; gap: 2px; padding: 3px; border: 1px solid #cbdcf2; border-radius: 999px; background: #e5effc; }
+.zoom-control button { min-width: 27px; height: 27px; border: 0; border-radius: 999px; background: transparent; color: #315a9c; font-size: 17px; font-weight: 700; line-height: 1; }
+.zoom-control button:hover:not(:disabled) { background: #d1e2fa; }
+.zoom-control button:disabled { color: #a9bbd5; cursor: default; }
+.zoom-control .zoom-value { min-width: 48px; font-size: 11px; }
 .offline-pill { background: #e0ecfb; color: #365f9e; }
 .offline-pill i { background: #5f92e9; }
 .toolbar {

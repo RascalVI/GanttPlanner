@@ -23,6 +23,18 @@ describe('shared export layout', () => {
     expect(scene.items.some(item => item.type === 'text' && item.y === 105 && item.x === 1483)).toBe(false);
   });
 
+  it('expands sparse rows and their labels to use the slide table height', () => {
+    const tasks = base.tasks.filter(task => task.employeeId === demoProject.employees[0].id && !task.routine).slice(0, 3);
+    const scene = buildExportScenes({ ...base, tasks }, demoProject.employees, range)[0];
+    const employeeRows = scene.items.filter(item => item.type === 'rect' && item.fill === 'EAF2FE');
+    expect(employeeRows[0].h).toBeGreaterThan(45);
+    const taskTitle = scene.items.find(item => item.role === 'task-title' && item.type === 'text');
+    expect(taskTitle?.type).toBe('text');
+    if (taskTitle?.type === 'text') expect(taskTitle.fontSize).toBeGreaterThan(14);
+    const bar = scene.items.find(item => item.role === 'task-bar');
+    expect(bar?.h).toBeGreaterThan(18);
+  });
+
   it('paginates many tasks without dropping any', () => {
     const tasks: Task[] = Array.from({ length: 60 }, (_, index) => ({
       ...base.tasks[0], id: `many-${index}`, title: `Задача ${index}`,
