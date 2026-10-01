@@ -1,6 +1,6 @@
 import { addDays, daysInclusive, mondayOf } from './dates';
 import { commitRevision } from './history';
-import { addRoutineTasks, copyPlan, moveTask, removeTask, resizeTask, updateTask, weeksInRange } from './plans';
+import { addRoutineTasks, copyPlan, moveTask, planRangeTitle, removeTask, resizeTask, updateTask, weeksInRange } from './plans';
 import type { Employee, Plan, Project, Task } from './types';
 
 export type PlannerAction =
@@ -106,7 +106,11 @@ export function applyPlannerAction(project: Project, action: PlannerAction, edit
         daysInclusive(action.rangeStart, action.rangeEnd);
         const existingWeeks = new Set(weeksInRange(current.rangeStart, current.rangeEnd));
         const addedWeeks = weeksInRange(action.rangeStart, action.rangeEnd).filter(week => !existingWeeks.has(week));
+        const legacyTitle = `План на ${current.reportDay.split('-').reverse().join('.')}`;
+        const automaticTitle = current.title === planRangeTitle(current.rangeStart, current.rangeEnd) ||
+          current.title === legacyTitle;
         return { ...current, rangeStart: action.rangeStart, rangeEnd: action.rangeEnd,
+          title: automaticTitle ? planRangeTitle(action.rangeStart, action.rangeEnd) : current.title,
           tasks: addRoutineTasks(current.tasks, addedWeeks, project.employees.filter(employee => !employee.archived), action.rangeStart) };
       });
     case 'renamePlan':

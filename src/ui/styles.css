@@ -116,6 +116,10 @@ body { background: radial-gradient(circle at 14% 4%, #f8fbff 0, #edf4fc 46%, #e7
 }
 .toolbar-plan select, .toolbar-range input { color: var(--ink); }
 .toolbar .plan-rename, .range-separator { color: #6882ad; }
+.plan-title-input { width: 100%; min-width: 0; flex: 1; border: 1px solid #9cb9ec; border-radius: 8px; padding: 4px 7px; outline: 0; background: #fff; color: var(--ink); font-size: 14px; font-weight: 700; }
+.plan-title-input:focus { box-shadow: 0 0 0 3px #8cb1ef52; }
+.toolbar .plan-edit-action { flex: none; padding: 4px 7px; background: #f3f8ff; color: #315fc2; border: 1px solid #c4d8f5; border-radius: 7px; font-size: 14px; }
+.plan-rename-error { display: block; margin-top: 2px; color: #a7495c; font-size: 10px; }
 .toolbar-range { border-left-color: #cbdcf2; }
 .toolbar-range label { color: #7085a6; }
 .toolbar button, .empty-actions button { border-radius: 999px; }

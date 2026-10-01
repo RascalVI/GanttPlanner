@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { addDays, daysInclusive, mondayOf } from '../src/domain/dates';
-import { copyPlan, moveTask, resizeTask, updateTask, removeTask } from '../src/domain/plans';
+import { copyPlan, moveTask, resizeTask, updateTask, removeTask, nextPlanDefaults, planRangeTitle } from '../src/domain/plans';
 import type { Employee, Plan, Task } from '../src/domain/types';
 
 const employees: Employee[] = [
@@ -35,9 +35,18 @@ describe('planning dates', () => {
 });
 
 describe('plan operations', () => {
+  it('defaults the next report to the following Monday through Sunday', () => {
+    expect(nextPlanDefaults({ reportDay: '2026-09-24' })).toEqual({
+      reportDay: '2026-10-01', rangeStart: '2026-09-28', rangeEnd: '2026-10-04',
+    });
+    expect(planRangeTitle('2026-09-28', '2026-10-04')).toBe('План 28.09–04.10.2026');
+    expect(planRangeTitle('2026-12-28', '2027-01-03')).toBe('План 28.12.2026–03.01.2027');
+  });
+
   it('copies the old plan independently and adds weekly routine for each employee', () => {
     const next = copyPlan(source, '2026-09-21', '2026-09-21', '2026-10-04', employees);
     expect(next.id).not.toBe(source.id);
+    expect(next.title).toBe('План 21.09–04.10.2026');
     expect(next.tasks.filter(item => item.routine)).toHaveLength(6);
     expect(next.tasks.find(item => !item.routine)?.startDay).toBe('2026-09-17');
     expect(next.tasks.find(item => !item.routine)?.id).not.toBe('t1');

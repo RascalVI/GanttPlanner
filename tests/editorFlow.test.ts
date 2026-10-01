@@ -95,6 +95,18 @@ describe('planner actions', () => {
     expect(deleted.plans[0].tasks).toEqual(initial.plans[0].tasks);
   });
 
+  it('keeps an automatic title in sync with dates without overwriting a custom name', () => {
+    const initial = setup();
+    const planId = initial.plans[0].id;
+    const changed = applyPlannerAction(initial, { type: 'changeRange', planId,
+      rangeStart: '2026-09-21', rangeEnd: '2026-09-27' }, null);
+    expect(changed.plans[0].title).toBe('План 21.09–27.09.2026');
+    const named = applyPlannerAction(changed, { type: 'renamePlan', planId, title: 'Запуск портала' }, null);
+    const later = applyPlannerAction(named, { type: 'changeRange', planId,
+      rangeStart: '2026-09-28', rangeEnd: '2026-10-04' }, null);
+    expect(later.plans[0].title).toBe('Запуск портала');
+  });
+
   it('requires a replacement before removing a participant with work tasks', () => {
     const initial = setup();
     const planId = initial.plans[0].id;

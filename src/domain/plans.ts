@@ -50,6 +50,23 @@ export function weeksInRange(start: Day, end: Day): Day[] {
   return result;
 }
 
+export function nextPlanDefaults(source: Pick<Plan, 'reportDay'>): {
+  reportDay: Day; rangeStart: Day; rangeEnd: Day;
+} {
+  const reportDay = addDays(source.reportDay, 7);
+  const rangeStart = mondayOf(reportDay);
+  return { reportDay, rangeStart, rangeEnd: addDays(rangeStart, 6) };
+}
+
+export function planRangeTitle(start: Day, end: Day): string {
+  daysInclusive(start, end);
+  const [startYear, startMonth, startDate] = start.split('-');
+  const [endYear, endMonth, endDate] = end.split('-');
+  const first = startYear === endYear
+    ? `${startDate}.${startMonth}` : `${startDate}.${startMonth}.${startYear}`;
+  return `План ${first}–${endDate}.${endMonth}.${endYear}`;
+}
+
 export function addRoutineTasks(tasks: Task[], weeks: Day[], employees: Employee[], rangeStart: Day): Task[] {
   const result = [...tasks];
   for (const week of weeks) {
@@ -88,7 +105,7 @@ export function copyPlan(
   const tasks = addRoutineTasks(copiedTasks, weeks, employees, rangeStart);
   return {
     id: crypto.randomUUID(),
-    title: `План на ${reportDay.split('-').reverse().join('.')}`,
+    title: planRangeTitle(rangeStart, rangeEnd),
     reportDay, rangeStart, rangeEnd,
     createdAt: new Date().toISOString(),
     tasks,

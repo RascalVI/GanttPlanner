@@ -1,14 +1,14 @@
 import { useState, type FormEvent } from 'react';
-import { addDays, mondayOf } from '../domain/dates';
+import { nextPlanDefaults } from '../domain/plans';
 import type { Plan } from '../domain/types';
 
 interface Props { source: Plan; onClose(): void; onCreate(reportDay: string, start: string, end: string): void; }
 
 export function PlanCopyDialog({ source, onClose, onCreate }: Props) {
-  const nextStart = addDays(mondayOf(source.reportDay), 7);
-  const [reportDay, setReportDay] = useState(nextStart);
-  const [start, setStart] = useState(nextStart);
-  const [end, setEnd] = useState(addDays(nextStart, 13));
+  const defaults = nextPlanDefaults(source);
+  const [reportDay, setReportDay] = useState(defaults.reportDay);
+  const [start, setStart] = useState(defaults.rangeStart);
+  const [end, setEnd] = useState(defaults.rangeEnd);
   const [error, setError] = useState('');
   function submit(event: FormEvent) {
     event.preventDefault();
