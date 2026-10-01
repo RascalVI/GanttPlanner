@@ -19,6 +19,7 @@ describe('PowerPoint export', () => {
       expect(slide).toContain('<p:sp>');
       expect(slide).toContain('Нематериальная мотивация');
       expect(slide).toContain('typeface="Century Gothic"');
+      expect(slide).not.toContain('ОТЧЁТ ОТ');
       expect(slide).not.toContain('<p:pic>');
     } finally {
       await rm(folder, { recursive: true, force: true });

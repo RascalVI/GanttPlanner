@@ -16,6 +16,13 @@ describe('shared export layout', () => {
     expect(scenes[0].items.every(item => item.x >= 0 && item.y >= 0)).toBe(true);
   });
 
+  it('does not put a report badge in the slide header', () => {
+    const scene = buildExportScenes(base, demoProject.employees, range)[0];
+    expect(scene.items.some(item => item.type === 'text' && item.text.startsWith('ОТЧЁТ ОТ'))).toBe(false);
+    expect(scene.items.some(item => item.type === 'rect' && item.x === 1463 && item.y === 69)).toBe(false);
+    expect(scene.items.some(item => item.type === 'text' && item.y === 105 && item.x === 1483)).toBe(false);
+  });
+
   it('paginates many tasks without dropping any', () => {
     const tasks: Task[] = Array.from({ length: 60 }, (_, index) => ({
       ...base.tasks[0], id: `many-${index}`, title: `Задача ${index}`,

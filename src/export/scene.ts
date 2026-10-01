@@ -86,9 +86,6 @@ function drawPage(plan: Plan, rows: Row[], start: Day, end: Day, page: number, t
   rect(items, 70, 61, 1150, 82, 'D5E3FA', undefined, undefined, 19);
   tx(items, 'ПЛАН РАЗРАБОТКИ СТРАНИЦ ПОРТАЛА', 90, 66, 1150, 23, 14, '526B9E', true);
   tx(items, plan.title, 90, 91, 1290, 43, 34, colors.ink, true);
-  rect(items, 1463, 69, 368, 67, 'EDF4FE', undefined, undefined, 19);
-  tx(items, `ОТЧЁТ ОТ ${plan.reportDay.split('-').reverse().join('.')}`, 1483, 78, 327, 22, 16, colors.ink, true, 'right');
-  tx(items, `${start.split('-').reverse().join('.')} — ${end.split('-').reverse().join('.')}`, 1483, 105, 327, 20, 14, colors.muted, false, 'right');
   rect(items, 56, 169, 1808, 833, 'F9FBFF', undefined, undefined, 24);
   rect(items, 70, 181, 1780, 42, 'E9F1FD', undefined, undefined, 13);
   tx(items, 'СОТРУДНИК / ЗАДАЧА', 88, 187, 400, 28, 15, colors.muted, true);
